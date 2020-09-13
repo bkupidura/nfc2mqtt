@@ -12,6 +12,7 @@ Because of that, scan process is longer (~1-2s) (we need not only to `sense` nfc
 **nfc2mqtt is under development, before use please check source code**
 
 ### Instalation
+#### Python
 Python3 and pip3 should be installed and working.
 
 ```
@@ -19,10 +20,22 @@ git clone https://github.com/bkupidura/nfc2mqtt
 cd nfc2mqtt
 pip3 install .
 ```
+#### Docker
+```
+git clone https://github.com/bkupidura/nfc2mqtt
+cd nfc2mqtt
+docker build -t nfc2mqtt .
+```
 
 ### Usage
+#### Python
 ```
 nfc2mqtt -c /etc/nfc2mqtt.yaml
+```
+#### Docker
+You will need to disover NFC reader [usb path](https://nfcpy.readthedocs.io/en/latest/topics/get-started.html#open-a-local-device), and probably blacklist some kernel modules (`sudo modprobe -r pn533_usb`).
+```
+docker run -v /data/config.yaml:/config.yaml --device /dev/bus/usb/003/009 -t -i nfc2mqtt
 ```
 
 ### nfc2mqtt tag payload
