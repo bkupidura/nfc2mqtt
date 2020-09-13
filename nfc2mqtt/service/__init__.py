@@ -33,24 +33,30 @@ class TagStatus(int, Enum):
 
 
 class Service(mqtt.Mqtt):
-    def __init__(self, server='localhost', port=1883, keepalive=60, username=None, password=None, topic='nfc2mqtt', reader='usb', authenticate_password=None, encrypt_key=None, id_length=5):
+    def __init__(self, **args):
         super(Service, self).__init__()
 
-        self.nfc_cf = nfc.ContactlessFrontend(reader)
+        args_mqtt = args.get('mqtt', dict())
+        args_nfc = args.get('nfc', dict())
+
+        assert args_nfc.get('encrypt_key') is not None, 'Config nfc.encrypt_key must be set'
 
         self.mqtt_config = {
-            'server': server,
-            'port': port,
-            'keepalive': keepalive,
-            'username': username,
-            'password': password,
-            'topic': topic
+            'server': args_mqtt.get('server', 'localhost'),
+            'port': args_mqtt.get('port', 1883),
+            'keepalive': args_mqtt.get('keepalive', 60),
+            'username': args_mqtt.get('username', None),
+            'password': args_mqtt.get('password', None),
+            'topic': args_mqtt.get('topic', 'nfc2mqtt')
         }
         self.nfc_config = {
-            'authenticate_password': authenticate_password,
-            'encrypt_key': encrypt_key,
-            'id_length': id_length
+            'authenticate_password': args_nfc.get('authenticate_password', None),
+            'encrypt_key': args_nfc['encrypt_key'],
+            'id_length': args_nfc.get('id_length', 5),
+            'reader': args_nfc.get('reader', 'usb')
         }
+
+        self.nfc_cf = nfc.ContactlessFrontend(self.nfc_config['reader'])
         self.write_tag_queue = list()
 
         write_topic = '{}/write_tag'.format(self.mqtt_config['topic'])
@@ -150,9 +156,9 @@ class Service(mqtt.Mqtt):
         if tag.ndef is not None:
             try:
                 if payload['data'] is not None:
-                    payload_formatted = "{id} {valid_till} {data}".format(**payload)
+                    payload_formatted = '{id} {valid_till} {data}'.format(**payload)
                 else:
-                    payload_formatted = "{id} {valid_till}".format(**payload)
+                    payload_formatted = '{id} {valid_till}'.format(**payload)
 
                 encrypted_payload = self._encrypt(bytes(payload_formatted, 'utf-8'))
                 LOG.info('Plain text length %d, encrypted text length %d', len(payload_formatted), len(encrypted_payload))
@@ -199,7 +205,7 @@ class Service(mqtt.Mqtt):
             return False
          
         try:
-            payload = self._decrypt(bytes(payload_encrypted.text, "utf-8"))
+            payload = self._decrypt(bytes(payload_encrypted.text, 'utf-8'))
         except InvalidToken:
             tag.n2m['status'] = TagStatus.Invalid
             return False
@@ -294,10 +300,10 @@ def main():
 
     config = utils.load_config(args.config)
 
-    utils.create_logger(config.get('logging'))
+    utils.create_logger(config.get('logging', dict()))
 
-    service = Service(**config.get('mqtt'), **config.get('nfc'))
+    service = Service(**config)
     service.run()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

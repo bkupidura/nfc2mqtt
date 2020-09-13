@@ -34,6 +34,8 @@ def load_config(config_name):
     with open(config_name) as yaml_config:
         config = yaml.load(yaml_config, Loader=yaml.FullLoader)
 
+    if config is None:
+        config = dict()
     return config
 
 def gen_random_string(chars=string.ascii_letters+string.digits, length=5):
