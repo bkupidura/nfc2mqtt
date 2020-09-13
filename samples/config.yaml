@@ -2,6 +2,7 @@ nfc:
   reader: usb
   authenticate_password: pa2SB6ZC8NUFzX1IXBbA7OF9xj5cTrdAImkx3t9i0Fw=
   encrypt_key: Wv_o4fUMFrPFZv0Es02f361nW_kdpFLdXdTo7e7jo0c=
+  id_length: 5
 mqtt:
   server: localhost
   port: 1883

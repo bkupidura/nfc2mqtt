@@ -33,7 +33,7 @@ class TagStatus(int, Enum):
 
 
 class Service(mqtt.Mqtt):
-    def __init__(self, server='localhost', port=1883, keepalive=60, username=None, password=None, topic='nfc2mqtt', reader='usb', authenticate_password=None, encrypt_key=None):
+    def __init__(self, server='localhost', port=1883, keepalive=60, username=None, password=None, topic='nfc2mqtt', reader='usb', authenticate_password=None, encrypt_key=None, id_length=5):
         super(Service, self).__init__()
 
         self.nfc_cf = nfc.ContactlessFrontend(reader)
@@ -48,7 +48,8 @@ class Service(mqtt.Mqtt):
         }
         self.nfc_config = {
             'authenticate_password': authenticate_password,
-            'encrypt_key': encrypt_key
+            'encrypt_key': encrypt_key,
+            'id_length': id_length
         }
         self.write_tag_queue = list()
 
@@ -87,7 +88,7 @@ class Service(mqtt.Mqtt):
             payload['data'] = json.dumps(payload['data'])
 
         tag_payload = {
-            'id': payload.get('id', utils.gen_random_string(length=5)),
+            'id': payload.get('id', utils.gen_random_string(length=self.nfc_config['id_length'])),
             'valid_till': payload.get('valid_till', 0),
             'data': payload.get('data')
         }

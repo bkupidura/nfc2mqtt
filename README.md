@@ -44,6 +44,8 @@ NFC tag ID can't be trusted. nfc2mqtt will **NOT use ID to identify tags**.
 
 As nfc2mqtt stores everything in encrypted form, plenty of tag user bytes are wasted for encryption. Ex. simple payload `AnGP7 0` (`{"id": "AnGP7", "valid_till": 0}`) which without encryption is 7 bytes long, after encryption is 100 bytes long.
 
+**Encryption of tags CAN'T be disabled.**
+
 #### Payload
 ```
 tag_id valid_till [data]
@@ -61,7 +63,9 @@ By default it is not set.
 ### MQTT endpoints
 #### nfc2mqtt/write_tag
 Expect `empty` message or JSON message.
+
 If `empty` message is received, next tag connected to NFC reader will be written with default payload. (random `tag_id`, 0 as `valid_till`).
+
 If JSON message is received, next tag conneccted to NFC reader will be written as described in JSON.
 Supported JSON properties:
 * id - `tag_id`, if missing `tag_id` will be auto generated.
@@ -95,6 +99,7 @@ Generate new tag with multiple fields:
 
 #### nfc2mqtt/wipe_tag
 Expect `empty` message.
+
 When message is received, next tag connected to NFC reader will be formated. For more information please check [nfcpy](https://nfcpy.readthedocs.io/en/latest/modules/tag.html#nfc.tag.Tag.format).
 ##### Examples
 
@@ -131,11 +136,16 @@ Tags suppoorted by nfc2mqtt:
 * NTAG216 - **NOT TESTED** but should work (preferable choice, as they expose 888 user data bytes)
 
 ### Config
+Before first run you should change `authenticate_password` and `encrypt_key`. New keys can be generated with [fernet token](#generate-fernet-token).
+
+**Ensure that `encrypt_key` is different than `authenticate_password`.**
+
 ```
 nfc:
   reader: usb
   authenticate_password: pa2SB6ZC8NUFzX1IXBbA7OF9xj5cTrdAImkx3t9i0Fw=
   encrypt_key: Wv_o4fUMFrPFZv0Es02f361nW_kdpFLdXdTo7e7jo0c=
+  id_length: 5
 mqtt:
   server: localhost
   port: 1883
@@ -151,6 +161,20 @@ logging:
 * reader - `nfcpy` readder path
 * authenticate_password - password used to `authenticate` and `protect`. If you change that, you will need to rewrite **ALL** tags. For `write_tag` MQTT endpoint please provide old `authenticate_password`. It can be generated with [fernet token](#generate-fernet-token).
 * encrypt_key - Fernet token used to encrypt tag content. If you change that, nfc2mqtt will not be able to decrypt tags with previous `encrypt_key`. You will need to rewrite **ALL** tags. This can be helpfull if you lost tag with `valid_till: 0` . It can be generated with [fernet token](#generate-fernet-token).
+
+### Security
+All tags "created" by nfc2mqtt are protected from reading on NFC tag level. `authenticate_password` is used for that.
+Tag can be still cloned and proably readed, but all data stored physicaly on tag is encrypted with [symmetric cipher](https://cryptography.io/en/latest/fernet/) and secure.
+
+#### What does it mean
+You should assume that any tag lost or passed to stranger can be cloned and used in malicious way.
+Attacker will not be able to read decrypted content of yours NFC tag (`tag_id`, `valid_till`, `data`). Also attacker will not be able to change NFC tag content (he would need to know `encrypt_key`).
+
+So if you give yours petsitter NFC tag, with `valid_till` set to ex. `utcnow()` + `1 week`, this tag will work only for `1 week`, not longer.
+
+If you lost NFC tag with `valid_till: 0`, you should change `encrypt_key` in nfc2mqtt and rewrite all trusted tags with new `encrypt_key`.
+
+Tags should be treated as physcial lock keys. If you lost tag for 2h (in the wild, not in yours apartment), you should assume that tag is copromised, and you should change `encrypt_key`.
 
 ### Generate fernet token
 ```
