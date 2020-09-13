@@ -1,0 +1,6 @@
+nfcpy
+ndeflib
+cryptography
+paho-mqtt
+pyyaml
+argparse
