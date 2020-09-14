@@ -16,26 +16,26 @@ Because of that, scan process is longer (~1-2s) (we need not only to `sense` nfc
 Python3 and pip3 should be installed and working.
 
 ```
-git clone https://github.com/bkupidura/nfc2mqtt
-cd nfc2mqtt
-pip3 install .
+$ git clone https://github.com/bkupidura/nfc2mqtt
+$ cd nfc2mqtt
+$ pip3 install .
 ```
 #### Docker
 ```
-git clone https://github.com/bkupidura/nfc2mqtt
-cd nfc2mqtt
-docker build -t nfc2mqtt .
+$ git clone https://github.com/bkupidura/nfc2mqtt
+$ cd nfc2mqtt
+$ docker build -t nfc2mqtt .
 ```
 
 ### Usage
 #### Python
 ```
-nfc2mqtt -c /etc/nfc2mqtt.yaml
+$ nfc2mqtt -c /etc/nfc2mqtt.yaml
 ```
 #### Docker
 You will need to disover NFC reader [usb path](https://nfcpy.readthedocs.io/en/latest/topics/get-started.html#open-a-local-device), and probably blacklist some kernel modules (`sudo modprobe -r pn533_usb`).
 ```
-docker run -v /data/config.yaml:/config.yaml --device /dev/bus/usb/003/009 -t -i nfc2mqtt
+$ docker run -v /data/config.yaml:/config.yaml --device /dev/bus/usb/003/009 -t -i nfc2mqtt
 ```
 
 ### nfc2mqtt tag payload
@@ -75,27 +75,27 @@ Supported JSON properties:
 ##### Examples
 Generate new tag with default values:
 
-`mosquitto_pub ... -t 'nfc2mqtt/write_tag' -m ''`.
+`$ mosquitto_pub ... -t 'nfc2mqtt/write_tag' -m ''`.
 
 Generate new tag with known id:
 
-`mosquitto_pub ... -t 'nfc2mqtt/write_tag' -m '{"id": "example"}'`
+`$ mosquitto_pub ... -t 'nfc2mqtt/write_tag' -m '{"id": "example"}'`
 
 Generate new tag with valid_till:
 
-`mosquitto_pub ... -t 'nfc2mqtt/write_tag' -m '{"valid_till": 1599947426}'`
+`$ mosquitto_pub ... -t 'nfc2mqtt/write_tag' -m '{"valid_till": 1599947426}'`
 
 Generate new tag with string data:
 
-`mosquitto_pub ... -t 'nfc2mqtt/write_tag' -m '{"data": "string}'`
+`$ mosquitto_pub ... -t 'nfc2mqtt/write_tag' -m '{"data": "string}'`
 
 Generate new tag with JSON data:
 
-`mosquitto_pub ... -t 'nfc2mqtt/write_tag' -m '{"data": {"json": true}}'`
+`$ mosquitto_pub ... -t 'nfc2mqtt/write_tag' -m '{"data": {"json": true}}'`
 
 Generate new tag with multiple fields:
 
-`mosquitto_pub ... -t 'nfc2mqtt/write_tag' -m '{"id": "example", "valid_till": 1700000000, "data": {"field1": "value1", "field2": 1}}'`
+`$ mosquitto_pub ... -t 'nfc2mqtt/write_tag' -m '{"id": "example", "valid_till": 1700000000, "data": {"field1": "value1", "field2": 1}}'`
 
 #### nfc2mqtt/wipe_tag
 Expect `empty` message.
@@ -103,16 +103,16 @@ Expect `empty` message.
 When message is received, next tag connected to NFC reader will be formated. For more information please check [nfcpy](https://nfcpy.readthedocs.io/en/latest/modules/tag.html#nfc.tag.Tag.format).
 ##### Examples
 
-`mosquitto_pub ... -t 'nfc2mqtt/wipe_tag' -m ''`
+`$ mosquitto_pub ... -t 'nfc2mqtt/wipe_tag' -m ''`
 
 ### MQTT publish
 When valid tag is scanned, new message will be publish to `nfc2mqtt/tag/<tag_id>`.
 #### Payload
-`nfc2mqtt/tag/AnGP7` -> `{"status": 1, "id": "AnGP7", "valid_till": 0}`
+`nfc2mqtt/tag/AnGP7` -> `{"status": 1, "id": "AnGP7", "valid_till": 0, "tag": {"product": "NXP NTAG213", "type": "Type2Tag", "id": "049962228b5f80"}}`
 
-`nfc2mqtt/tag/Dj3dV` -> `{"status": 1, "id": "Dj3dV", "valid_till": 0, "data": {"custom": "value"}}`
+`nfc2mqtt/tag/Dj3dV` -> `{"status": 1, "id": "Dj3dV", "valid_till": 0, "data": {"custom": "value"}, "tag": {"product": "NXP NTAG213", "type": "Type2Tag", "id": "049962228b5f80"}}`
 
-`nfc2mqtt/tag/h89u9` -> `{"status": 1, "id": "h89u9", "valid_till": 1700000000, "data": "string data", "valid_till_dt_utc": "2023-11-14 22:13:20"}`
+`nfc2mqtt/tag/h89u9` -> `{"status": 1, "id": "h89u9", "valid_till": 1700000000, "data": "string data", "valid_till_dt_utc": "2023-11-14 22:13:20", "tag": {"product": "NXP NTAG213", "type": "Type2Tag", "id": "049962228b5f80"}}`
 
 ### Scan tag status
 * `Valid` - `1`, tag is valid and can be trusted
@@ -126,10 +126,10 @@ When valid tag is scanned, new message will be publish to `nfc2mqtt/tag/<tag_id>
 I own one NFC reader (`ACR122U`), so all development is done on it.
 
 Tags **NOT** supported by nfc2mqtt:
-* All Mifare cards - ACR122U/nfcpy is not able to write on those tags (probably because of missing CRYPTO1 support)
+* All Mifare cards - nfcpy is not able to write on those tags (probably because of missing CRYPTO1 support)
 * NTAG210 - expose just 48 bytes for user data, its too small for encryption
 
-Tags suppoorted by nfc2mqtt:
+Tags supported by nfc2mqtt:
 * NTAG212 - **NOT TESTED** but should work
 * NTAG213 - works
 * NTAG215 - **NOT TESTED** but should work
@@ -164,7 +164,7 @@ logging:
 
 ### Security
 All tags "created" by nfc2mqtt are protected from reading on NFC tag level. `authenticate_password` is used for that.
-Tag can be still cloned and proably readed, but all data stored physicaly on tag is encrypted with [symmetric cipher](https://cryptography.io/en/latest/fernet/) and secure.
+Tag probably still can be cloned and readed, but all data stored physicaly on tag is encrypted with [symmetric cipher](https://cryptography.io/en/latest/fernet/) and secure.
 
 #### What does it mean
 You should assume that any tag lost or passed to stranger can be cloned and used in malicious way.

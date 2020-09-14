@@ -188,7 +188,12 @@ class Service(mqtt.Mqtt):
             return False
 
         tag.n2m = {
-            'status': TagStatus.ScanError
+            'status': TagStatus.ScanError,
+            'tag': {
+                'product': tag.product,
+                'type': tag.type,
+                'id': tag.identifier.hex()
+            }
         }
 
         if self.nfc_config['authenticate_password'] is not None:
@@ -267,7 +272,7 @@ class Service(mqtt.Mqtt):
             if tag is None or not hasattr(tag, 'n2m'):
                 continue
 
-            if tag.n2m.get('id'):
+            if tag.n2m.get('id') is not None:
                 tag_topic = '{}/tag/{}'.format(self.mqtt_config['topic'], tag.n2m['id'])
             else:
                 tag_topic = '{}/tag'.format(self.mqtt_config['topic'])
