@@ -108,40 +108,44 @@ class Service(mqtt.Mqtt):
         LOG.info('Adding new payload %s to write tag queue', write_tag_paylod)
         self.write_tag_queue.append(write_tag_paylod)
 
+    def _authenticate_tag(self, tag, password):
+        try:
+            status = tag.authenticate(bytes(password, 'ascii'))
+        except (nfc.tag.tt2.Type2TagCommandError, ValueError, IndexError) as e:
+            LOG.warning('Unable to authenticate: %s', e)
+            return False
+
+        if status is False:
+            LOG.warning('Unable to authenticate')
+        elif status is None:
+            LOG.warning('Tag is not supporting authentication')
+        return status
+
     def _wipe_tag(self, tag):
         LOG.info('Wiping tag')
 
-        if self.nfc_config['authenticate_password'] is not None:
-            try:
-                if tag.authenticate(bytes(self.nfc_config['authenticate_password'], 'ascii')) is False:
-                    LOG.warning('Unable to authenticate')
-                    return False
-            except (nfc.tag.tt2.Type2TagCommandError, ValueError, IndexError) as e:
-                LOG.warning('Unable to authenticate: %s', e)
-                return False
+        if self.nfc_config['authenticate_password'] is not None and self._authenticate_tag(tag, self.nfc_config['authenticate_password']) is False:
+            return False
 
         try:
-            if tag.format(wipe=255) is False:
-                LOG.warning('Unable to format tag')
-                return False
-        except nfc.tag.tt2.Type2TagCommandError:
-             LOG.warning('Unable to format tag')
-             return False
+            status = tag.format(wipe=255)
+        except (nfc.tag.tt2.Type2TagCommandError) as e:
+            LOG.warning('Unable to format tag: %s', e)
+            return False
 
-        LOG.info('Tag wiped successfuly')
-        return True
+        if status is False:
+            LOG.warning('Unable to format tag')
+        elif status is None:
+            LOG.warning('Tag is not supporting format')
+        else:
+            LOG.info('Tag wiped successfuly')
+        return status
 
     def _write_tag(self, tag, payload, authenticate_password):
         LOG.info('Writing to tag %s', payload)
 
-        if authenticate_password is not None:
-            try:
-                if tag.authenticate(bytes(authenticate_password, 'ascii')) is False:
-                    LOG.warning('Authenticate password provided, but unable to authenticate')
-                    return False
-            except (nfc.tag.tt2.Type2TagCommandError, ValueError, IndexError) as e:
-                LOG.warning('Authenticate password provided, but unable to authenticate: %s', e)
-                return False
+        if authenticate_password is not None and self._authenticate_tag(tag, authenticate_password) is False:
+            return False
         
         if self.nfc_config['authenticate_password'] is not None:
             try:
@@ -150,8 +154,7 @@ class Service(mqtt.Mqtt):
                 # Already protected?
                 pass
 
-        if self._wipe_tag(tag) is False:
-            return False
+        self._wipe_tag(tag)
 
         if tag.ndef is not None:
             try:
@@ -264,7 +267,6 @@ class Service(mqtt.Mqtt):
         self.loop_start()
         while True:
             self.resend_publish_queue()
-
             now = time.time()
             terminate = lambda: time.time() - now > 2
 

@@ -116,7 +116,7 @@ When valid tag is scanned, new message will be publish to `nfc2mqtt/tag/<tag_id>
 
 ### Scan tag status
 * `Valid` - `1`, tag is valid and can be trusted
-* `Invalid` - `2`, tag is invalid (unable to decrypt content or invalid content)
+* `Invalid` - `2`, tag is invalid (unable to decrypt content)
 * `UnknownPayloadType` - `3`, tag was readed (and decrypted) - but contains unknown payload
 * `Expired` - `4`, tag already expired
 * `ScanError` - `5`, nfc2mqtt was not able to scan this tag (ex. too fast removed from reader, or wrong authentication password)
