@@ -79,7 +79,7 @@ class Service(mqtt.Mqtt):
         write_tag_payload = {
             'action': 'wipe'
         }
-        LOG.info('Adding new payload to write tag queue (wipe)')
+        LOG.info('Adding new payload %s to write tag queue', write_tag_payload)
         self.write_tag_queue.append(write_tag_payload)
 
     def _on_write_tag_message(self, client, userdata, msg):
@@ -105,7 +105,7 @@ class Service(mqtt.Mqtt):
             'authenticate_password': authenticate_password
         }
         
-        LOG.info('Adding new payload %s to write tag queue (write)', tag_payload)
+        LOG.info('Adding new payload %s to write tag queue', write_tag_paylod)
         self.write_tag_queue.append(write_tag_paylod)
 
     def _wipe_tag(self, tag):
@@ -116,8 +116,8 @@ class Service(mqtt.Mqtt):
                 if tag.authenticate(bytes(self.nfc_config['authenticate_password'], 'ascii')) is False:
                     LOG.warning('Unable to authenticate')
                     return False
-            except nfc.tag.tt2.Type2TagCommandError:
-                LOG.warning('Unable to authenticate')
+            except (nfc.tag.tt2.Type2TagCommandError, ValueError, IndexError) as e:
+                LOG.warning('Unable to authenticate: %s', e)
                 return False
 
         try:
@@ -139,8 +139,8 @@ class Service(mqtt.Mqtt):
                 if tag.authenticate(bytes(authenticate_password, 'ascii')) is False:
                     LOG.warning('Authenticate password provided, but unable to authenticate')
                     return False
-            except nfc.tag.tt2.Type2TagCommandError:
-                LOG.warning('Authenticate password provided, but unable to authenticate')
+            except (nfc.tag.tt2.Type2TagCommandError, ValueError, IndexError) as e:
+                LOG.warning('Authenticate password provided, but unable to authenticate: %s', e)
                 return False
         
         if self.nfc_config['authenticate_password'] is not None:
