@@ -55,6 +55,7 @@ class Service(mqtt.Mqtt):
             'id_length': args_nfc.get('id_length', 5),
             'reader': args_nfc.get('reader', 'usb')
         }
+        self.reader_reconnect_stat = dict()
 
         self.nfc_cf = nfc.ContactlessFrontend(self.nfc_config['reader'])
         self.write_tag_queue = list()
@@ -262,10 +263,35 @@ class Service(mqtt.Mqtt):
         logger_func(message)
         self.beep(times=times, sleep=sleep)
 
+    def reader_reconnect(self):
+        now = int(time.time())
+        last_reconnect = self.reader_reconnect_stat.get('last_reconnect')
+
+        if last_reconnect is None:
+            self.reader_reconnect_stat['too_fast_terminate'] = list()
+        elif now - last_reconnect < 2:
+            self.reader_reconnect_stat['too_fast_terminate'].append(now)
+
+        self.reader_reconnect_stat['too_fast_terminate'] = list(filter(lambda x: now - x < 60, self.reader_reconnect_stat['too_fast_terminate']))
+
+        if len(self.reader_reconnect_stat['too_fast_terminate']) > 30:
+            LOG.error('Probably disconnected from NFC reader! Trying to reconnect...')
+            self.nfc_cf.close()
+            while True:
+                open_status = self.nfc_cf.open(self.nfc_config['reader'])
+                if open_status is True:
+                    LOG.info('Reconnected')
+                    self.reader_reconnect_stat['last_reconnect'] = None
+                    break
+                time.sleep(5)
+        else:
+            self.reader_reconnect_stat['last_reconnect'] = now
+
     def run(self):
         LOG.info('Starting')
         self.loop_start()
         while True:
+            self.reader_reconnect()
             self.resend_publish_queue()
             now = time.time()
             terminate = lambda: time.time() - now > 2
@@ -283,13 +309,13 @@ class Service(mqtt.Mqtt):
                 self.publish(tag_topic, tag.n2m)
                 self.log_and_beep(LOG.info, 'Valid tag scanned {}'.format(tag.n2m), times=1, sleep=5)
             elif tag.n2m['status'] == TagStatus.ScanError:
-                self.log_and_beep(LOG.info, 'Unable to scan tag', times=2, sleep=3)
+                self.log_and_beep(LOG.info, 'Unable to scan tag {}'.format(tag.n2m), times=2, sleep=3)
             elif tag.n2m['status'] == TagStatus.NoNdef:
-                self.log_and_beep(LOG.info, 'No ndef on tag, try to format tag', times=2, sleep=3)
+                self.log_and_beep(LOG.info, 'No ndef on tag, try to format tag {}'.format(tag.n2m), times=2, sleep=3)
             elif tag.n2m['status'] == TagStatus.Invalid:
-                self.log_and_beep(LOG.info, 'Invalid tag scanned, try to format tag', times=3, sleep=5)
+                self.log_and_beep(LOG.info, 'Invalid tag scanned, try to format tag {}'.format(tag.n2m), times=3, sleep=5)
             elif tag.n2m['status'] == TagStatus.UnknownPayloadType:
-                self.log_and_beep(LOG.info, 'Unknown payload type', times=3, sleep=5)
+                self.log_and_beep(LOG.info, 'Unknown payload type {}'.format(tag.n2m), times=3, sleep=5)
             elif tag.n2m['status'] == TagStatus.Expired:
                 self.log_and_beep(LOG.info, 'Expired tag scanned {}'.format(tag.n2m), times=3, sleep=5)
 

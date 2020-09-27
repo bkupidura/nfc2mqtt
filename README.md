@@ -133,7 +133,7 @@ Tags supported by nfc2mqtt:
 * NTAG212 - **NOT TESTED** but should work
 * NTAG213 - works
 * NTAG215 - **NOT TESTED** but should work
-* NTAG216 - **NOT TESTED** but should work (preferable choice, as they expose 888 user data bytes)
+* NTAG216 - works (preferable choice, as they expose 888 user data bytes)
 
 ### Config
 Before first run you should change `authenticate_password` and `encrypt_key`. New keys can be generated with [fernet token](#generate-fernet-token).
