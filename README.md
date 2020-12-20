@@ -56,6 +56,7 @@ By default it contains `[a-zA-Z0-9]` and it is `5` character long.
 ##### valid_till
 Stores time since `epoch` (UTC) (not valid after).
 By default its set to `0`, tag is valid always (don't expire).
+To generate `valid_till` from linux box use `date -d '2020-12-27T23:59:59' +%s`
 ##### data
 Data can be used to store any user/application data.
 By default it is not set.

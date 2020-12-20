@@ -1,0 +1,9 @@
+[Unit]
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/nfc2mqtt -c /etc/config.yaml
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
