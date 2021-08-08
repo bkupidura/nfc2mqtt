@@ -16,6 +16,7 @@ class Mqtt(object):
     def _on_connect(self, client, userdata, flags, rc):
         if rc == 0:
             LOG.info('Connection to broker established')
+            self.publish(userdata['will_topic'], 1, True)
             for topic in userdata.get('subscribe_to', list()):
                 self.mqtt.subscribe(topic)
 
@@ -46,11 +47,16 @@ class Mqtt(object):
     def connect(self, subscribe_to=None):
         LOG.info('Connecting to mqtt broker: %s', self.mqtt_config)
 
-        userdata = dict()
+        will_topic = '{}/online'.format(self.mqtt_config['topic'])
+        userdata = {
+            'will_topic': will_topic
+        }
         if subscribe_to is not None:
             userdata['subscribe_to'] = subscribe_to
 
+
         self.mqtt = paho.Client(userdata=userdata, protocol=paho.MQTTv31)
+        self.mqtt.will_set(will_topic, payload=0, retain=True)
 
         if self.mqtt_config['username'] is not None:
             self.mqtt.username_pw_set(self.mqtt_config['username'], self.mqtt_config['password'])
@@ -63,20 +69,20 @@ class Mqtt(object):
     def resend_publish_queue(self):
         publish_queue_len = len(self.publish_queue)
         for _ in range(publish_queue_len):
-            topic, payload = self.publish_queue.pop(0)
-            self.publish(topic, payload)
+            topic, payload, retain = self.publish_queue.pop(0)
+            self.publish(topic=topic, payload=payload, retain=retain)
 
-    def publish(self, topic=None, payload=None):
+    def publish(self, topic=None, payload=None, retain=False):
         if self.mqtt._host:
             if topic is not None:
                 if isinstance(payload, dict) or isinstance(payload, list):
                     payload = json.dumps(payload)
-                status = self.mqtt.publish(topic, payload=payload)
+                status = self.mqtt.publish(topic=topic, payload=payload, retain=retain)
                 if status.rc != 0:
                     LOG.error('Unable to publish message (paho rc %d). Adding message to queue', status.rc)
-                    self.publish_queue.append((topic, payload))
+                    self.publish_queue.append((topic, payload, retain))
             else:
                 LOG.warning('Publish topic is empty')
         else:
             LOG.error('Unable to publish message to %s, client is not connected to broker. Adding message to queue', topic)
-            self.publish_queue.append((topic, payload))
+            self.publish_queue.append((topic, payload, retain))

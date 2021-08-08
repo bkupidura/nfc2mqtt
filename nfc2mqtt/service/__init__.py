@@ -321,8 +321,8 @@ class Service(mqtt.Mqtt):
 
 
 LOG = logging.getLogger(__name__)
-logging.getLogger('nfc.clf').setLevel(logging.CRITICAL)
-logging.getLogger('nfc.tag').setLevel(logging.CRITICAL)
+logging.getLogger('nfc.clf').setLevel(logging.WARNING)
+logging.getLogger('nfc.tag').setLevel(logging.WARNING)
 
 signal.signal(signal.SIGINT, lambda sig, frame: sys.exit(0))
 
