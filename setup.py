@@ -31,7 +31,12 @@ with open(path.join(root, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setuptools.setup(
-    version="0.1.0",
+    version="0.1.1",
     long_description=long_description,
     long_description_content_type='text/markdown',
+    entry_points = {
+      'console_scripts': [
+        'nfc2mqtt = nfc2mqtt.service:main',
+      ],
+   },
 )
