@@ -16,12 +16,6 @@ jobs:
       -
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
-      - name: test
-        run: ls
-      - name: test
-        run: python setup.py -V
-      - name: test
-        run: python3 setup.py -V
       -
         name: Docker tag
         run: echo "DOCKER_TAG=$(python setup.py -V)" >> $GITHUB_ENV
