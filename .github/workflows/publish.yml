@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: Release
 
 on:
   workflow_dispatch:
@@ -16,6 +16,15 @@ jobs:
       -
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
+      - name: test
+        run: ls
+      - name: test
+        run: python setup.py -V
+      - name: test
+        run: python3 setup.py -V
+      -
+        name: Docker tag
+        run: echo "DOCKER_TAG=$(python setup.py -V)" >> $GITHUB_ENV
       -
         name: Docker meta
         id: meta
@@ -26,7 +35,7 @@ jobs:
           images: |
             bkupidura/nfc2mqtt
           tags: |
-            type=semver,pattern={{version}}
+            type=raw,value=${{ env.DOCKER_TAG }}
       -
         name: Login to DockerHub
         uses: docker/login-action@v1
@@ -41,17 +50,20 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+  pypi:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v2
       -
         name: Set up Python 3.7
         uses: actions/setup-python@v1
         with:
           python-version: 3.7
       -
-        name: Install pypa/build
-        run: python -m pip install build --user
-      -
-        name: Build a binary wheel and a source tarball
-        run: python -m build --sdist --wheel --outdir dist/
+        name: Build
+        run: python setup.py sdist
       -
         name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@master
