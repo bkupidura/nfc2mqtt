@@ -24,6 +24,14 @@ try:
 except ImportError:
     pass
 
+from os import path
+
+root = path.abspath(path.dirname(__file__))
+with open(path.join(root, 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
+
 setuptools.setup(
-    setup_requires=['pbr'],
-    pbr=True)
+    version="0.1.0",
+    long_description=long_description,
+    long_description_content_type='text/markdown',
+)

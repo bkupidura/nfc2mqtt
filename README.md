@@ -141,7 +141,7 @@ Before first run you should change `authenticate_password` and `encrypt_key`. Ne
 
 **Ensure that `encrypt_key` is different than `authenticate_password`.**
 
-```
+```yaml
 nfc:
   reader: usb
   authenticate_password: pa2SB6ZC8NUFzX1IXBbA7OF9xj5cTrdAImkx3t9i0Fw=
