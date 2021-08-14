@@ -9,23 +9,15 @@ It stores encrypted payload on tag/card, and send this payload to MQTT after rea
 nfc2mqtt **dosen't** store list of valid tags, tag is valid when encrypted content is valid (can be decrypted and its not expired).
 Because of that, scan process is longer (~1-2s) (we need not only to `sense` nfc tag, we also need to read tag data).
 
-**nfc2mqtt is under development, before use please check source code**
-
 ### Instalation
 #### Python
 Python3 and pip3 should be installed and working.
 
 ```
-$ git clone https://github.com/bkupidura/nfc2mqtt
-$ cd nfc2mqtt
-$ pip3 install .
+$ pip3 install nfc2mqtt
 ```
 #### Docker
-```
-$ git clone https://github.com/bkupidura/nfc2mqtt
-$ cd nfc2mqtt
-$ docker build -t nfc2mqtt .
-```
+There is ready nfc2mqtt docker image. Just pull `bkupidura/nfc2mqtt:latest`.
 
 ### Usage
 #### Python
@@ -33,9 +25,9 @@ $ docker build -t nfc2mqtt .
 $ nfc2mqtt -c /etc/nfc2mqtt.yaml
 ```
 #### Docker
-You will need to disover NFC reader [usb path](https://nfcpy.readthedocs.io/en/latest/topics/get-started.html#open-a-local-device), and probably blacklist some kernel modules (`sudo modprobe -r pn533_usb`).
+You will need to discover NFC reader [usb path](https://nfcpy.readthedocs.io/en/latest/topics/get-started.html#open-a-local-device), and probably blacklist some kernel modules (`sudo modprobe -r pn533_usb`).
 ```
-$ docker run -v /data/config.yaml:/config.yaml --device /dev/bus/usb/003/009 -t -i nfc2mqtt
+$ docker run --rm -d --name nfc2mqtt -v /data/config.yaml:/config.yaml --device /dev/bus/usb/003/009 bkupidura/nfc2mqtt:latest
 ```
 
 ### nfc2mqtt tag payload
@@ -51,7 +43,7 @@ As nfc2mqtt stores everything in encrypted form, plenty of tag user bytes are wa
 tag_id valid_till [data]
 ```
 ##### tag_id
-Its "random" string generated during writting tag.
+Its "random" string generated during writing tag.
 By default it contains `[a-zA-Z0-9]` and it is `5` character long.
 ##### valid_till
 Stores time since `epoch` (UTC) (not valid after).
@@ -122,6 +114,12 @@ When valid tag is scanned, new message will be publish to `nfc2mqtt/tag/<tag_id>
 * `Expired` - `4`, tag already expired
 * `ScanError` - `5`, nfc2mqtt was not able to scan this tag (ex. too fast removed from reader, or wrong authentication password)
 * `NoNdef` - `6`, tag dosen't contains `NDEF` field used to store content (probably not formatted by nfc2mqtt, or not supporting `NDEF`)
+
+### MQTT status
+nfc2mqtt will use MQTT last will/birth message.
+
+When it connects to MQTT broker, it will publish `1` to `nfc2mqtt/online`.
+When nfc2mqtt will be disconnected, `nfc2mqtt/online` will be set to `0`.
 
 ### Hardware
 I own one NFC reader (`ACR122U`), so all development is done on it.
