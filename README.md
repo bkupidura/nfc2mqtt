@@ -17,7 +17,7 @@ Python3 and pip3 should be installed and working.
 $ pip3 install nfc2mqtt
 ```
 #### Docker
-There is ready nfc2mqtt docker image. Just pull `bkupidura/nfc2mqtt:latest`.
+There is ready nfc2mqtt docker image. Just pull `ghcr.io/bkupidura/nfc2mqtt:latest`.
 
 ### Usage
 #### Python
@@ -27,7 +27,7 @@ $ nfc2mqtt -c /etc/nfc2mqtt.yaml
 #### Docker
 You will need to discover NFC reader [usb path](https://nfcpy.readthedocs.io/en/latest/topics/get-started.html#open-a-local-device), and probably blacklist some kernel modules (`sudo modprobe -r pn533_usb`).
 ```
-$ docker run --rm -d --name nfc2mqtt -v /data/config.yaml:/config.yaml --device /dev/bus/usb/003/009 bkupidura/nfc2mqtt:latest
+$ docker run --rm -d --name nfc2mqtt -v /data/config.yaml:/config.yaml --device /dev/bus/usb/003/009 ghcr.io/bkupidura/nfc2mqtt:latest
 ```
 
 ### nfc2mqtt tag payload
