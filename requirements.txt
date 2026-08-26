@@ -1,6 +1,5 @@
-nfcpy
-ndeflib
-cryptography
-paho-mqtt
-pyyaml
-argparse
+nfcpy==1.0.4
+ndeflib==0.3.3
+cryptography==50.0.1
+paho-mqtt==2.1.0
+pyyaml==6.0.3

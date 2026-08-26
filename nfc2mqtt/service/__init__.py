@@ -94,8 +94,14 @@ class Service(mqtt.Mqtt):
         if payload.get('data') is not None:
             payload['data'] = json.dumps(payload['data'])
 
+        tag_id = payload.get('id', utils.gen_random_string(length=self.nfc_config['id_length']))
+
+        if not isinstance(tag_id, str) or ' ' in tag_id:
+            LOG.warning('Invalid tag id %r, must be a string without spaces, ignoring write request', tag_id)
+            return
+
         tag_payload = {
-            'id': payload.get('id', utils.gen_random_string(length=self.nfc_config['id_length'])),
+            'id': tag_id,
             'valid_till': payload.get('valid_till', 0),
             'data': payload.get('data')
         }
@@ -166,7 +172,7 @@ class Service(mqtt.Mqtt):
 
                 encrypted_payload = self._encrypt(bytes(payload_formatted, 'utf-8'))
                 LOG.info('Plain text length %d, encrypted text length %d', len(payload_formatted), len(encrypted_payload))
-                tag.ndef.records = [TextRecord(encrypted_payload)]
+                tag.ndef.records = [TextRecord(encrypted_payload.decode('ascii'))]
             except ValueError:
                 LOG.warning('Unable to write content, too long?')
                 return False
