@@ -35,6 +35,7 @@ class TagStatus(int, Enum):
 class Service(mqtt.Mqtt):
     def __init__(self, **args):
         super(Service, self).__init__()
+        LOG.info('Starting')
 
         args_mqtt = args.get('mqtt', dict())
         args_nfc = args.get('nfc', dict())
@@ -294,7 +295,6 @@ class Service(mqtt.Mqtt):
             self.reader_reconnect_stat['last_reconnect'] = now
 
     def run(self):
-        LOG.info('Starting')
         self.loop_start()
         while True:
             self.reader_reconnect()
@@ -330,7 +330,6 @@ LOG = logging.getLogger(__name__)
 logging.getLogger('nfc.clf').setLevel(logging.WARNING)
 logging.getLogger('nfc.tag').setLevel(logging.WARNING)
 
-signal.signal(signal.SIGINT, lambda sig, frame: sys.exit(0))
 
 def main():
     parser = ArgumentParser(description='nfc2mqtt reads NFC tags and push them to MQTT')
@@ -342,6 +341,18 @@ def main():
     utils.create_logger(config.get('logging', dict()))
 
     service = Service(**config)
+
+    def shutdown(sig, frame):
+        LOG.info('Received signal %d, closing reader and exiting', sig)
+        try:
+            service.nfc_cf.close()
+        except Exception as e:
+            LOG.warning('Error closing reader on shutdown: %s', e)
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, shutdown)
+    signal.signal(signal.SIGTERM, shutdown)
+
     service.run()
 
 if __name__ == '__main__':

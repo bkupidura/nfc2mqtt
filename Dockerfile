@@ -1,11 +1,11 @@
-FROM python:3-alpine
+FROM python:3.14-alpine
 
 WORKDIR /nfc2mqtt
 
+RUN apk add --no-cache libusb
+
 COPY . .
-RUN apk update && \
-        apk add libusb-dev git build-base libffi-dev openssl-dev cargo
-RUN pip3 install -r requirements.txt && \
-        pip3 install .
+RUN pip3 install --no-cache-dir -r requirements.txt \
+    && pip3 install --no-cache-dir .
 
 CMD ["nfc2mqtt", "-c", "/config.yaml"]

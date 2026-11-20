@@ -13,16 +13,16 @@ class Mqtt(object):
         super(Mqtt, self).__init__()
         self.publish_queue = list()
 
-    def _on_connect(self, client, userdata, flags, rc):
-        if rc == 0:
+    def _on_connect(self, client, userdata, flags, reason_code, properties):
+        if not reason_code.is_failure:
             LOG.info('Connection to broker established')
             self.publish(userdata['will_topic'], 1, True)
             for topic in userdata.get('subscribe_to', list()):
                 self.mqtt.subscribe(topic)
 
-    def _on_disconnect(self, client, userdata, rc):
-        if rc != 0:
-            LOG.error('Connection to broker failed, reconnecting (paho rc %d)', rc)
+    def _on_disconnect(self, client, userdata, flags, reason_code, properties):
+        if reason_code.is_failure:
+            LOG.error('Connection to broker failed, reconnecting (paho rc %s)', reason_code)
             while True:
                 try:
                     self.mqtt.reconnect()
@@ -55,7 +55,7 @@ class Mqtt(object):
             userdata['subscribe_to'] = subscribe_to
 
 
-        self.mqtt = paho.Client(userdata=userdata, protocol=paho.MQTTv31)
+        self.mqtt = paho.Client(paho.CallbackAPIVersion.VERSION2, userdata=userdata, protocol=paho.MQTTv31)
         self.mqtt.will_set(will_topic, payload=0, retain=True)
 
         if self.mqtt_config['username'] is not None:
